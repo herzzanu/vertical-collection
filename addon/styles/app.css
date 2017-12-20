@@ -1,13 +1,10 @@
 occluded-content {
-  display: block;
-  position: relative;
-  width: 100%;
-
   /* prevents margin overflow on item container */
-  min-height: 0.01px;
+  min-width: 0.01px;
 
   /* hides text visually while still being readable by screen readers */
-  color: rgba(0,0,0,0);
+  color: rgba(0,0,0,0); 
+  flex: 0 0 auto;
 }
 
 table > occluded-content,
@@ -15,14 +12,11 @@ tbody > occluded-content,
 thead > occluded-content {
   display: table-row;
   position: relative;
-  width: 100%;
 }
 
 ul > occluded-content,
 ol > occluded-content {
   display: list-item;
   position: relative;
-  width: 100%;
   list-style-type: none;
-  height: 0;
 }
