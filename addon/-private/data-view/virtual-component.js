@@ -43,6 +43,8 @@ export default class VirtualComponent {
 
     let top = Infinity;
     let bottom = -Infinity;
+    let left = Infinity;
+    let right = -Infinity;
 
     while (upperBound !== lowerBound) {
       upperBound = upperBound.nextSibling;
@@ -50,6 +52,8 @@ export default class VirtualComponent {
       if (upperBound instanceof Element) {
         top = Math.min(top, upperBound.getBoundingClientRect().top);
         bottom = Math.max(bottom, upperBound.getBoundingClientRect().bottom);
+        left = Math.min(left, upperBound.getBoundingClientRect().left);
+        right = Math.min(right, upperBound.getBoundingClientRect().right);
       }
 
       if (DEBUG) {
@@ -66,8 +70,9 @@ export default class VirtualComponent {
     assert('Items in a vertical collection require atleast one element in them', top !== Infinity && bottom !== -Infinity);
 
     const height = bottom - top;
+    const width = right - left;
 
-    return { top, bottom, height };
+    return { top, bottom, left, right, height, width };
   }
 
   recycle(newContent, newIndex) {

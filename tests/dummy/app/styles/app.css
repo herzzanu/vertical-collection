@@ -106,7 +106,7 @@ number-slide {
   width: 250px;
   height: 4em;
   line-height: 4em;
-  margin: 10px auto;
+  margin: 10px;
   background: #1f2f30;
   border: 1px solid #bbb;
   box-shadow: 1px 1px 5px 0 #d0d0d0;
@@ -221,4 +221,10 @@ img.auto-size {
 
 vertical-item {
   display: block;
+}
+
+.scrollable-horizontal {
+  display: flex;
+  align-items: center;
+  width: 500px;
 }
