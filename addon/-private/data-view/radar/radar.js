@@ -265,7 +265,7 @@ export default class Radar {
    * that may have arisen between the cached `_scrollLeft` value and the actually container's
    * scrollLeft. The container's scrollLeft may be modified by the browser when we manipulate DOM
    * (Chrome specifically does this a lot), so `_scrollLeft` should be considered the canonical
-   * scroll top.
+   * scroll left.
    *
    * Subclasses should override this method to provide any difference between expected item size
    * pre-render and actual item size post-render.
@@ -482,7 +482,7 @@ export default class Radar {
     const beforeItemsText = totalItemsBefore === 1 ? 'item' : 'items';
     const afterItemsText = totalItemsAfter === 1 ? 'item' : 'items';
 
-    // Set padding element heights, unset itemContainer's minHeight
+    // Set padding element widths, unset itemContainer's minWidth
     _occludedContentBefore.element.style.width = `${Math.max(renderedTotalBefore, 0)}px`;
     _occludedContentBefore.element.innerHTML = totalItemsBefore > 0 ? `And ${totalItemsBefore} ${beforeItemsText} before` : '';
 
@@ -668,7 +668,7 @@ export default class Radar {
   }
 
   get visibleRight() {
-    // There is a case where the container of this vertical collection could have height 0 at
+    // There is a case where the container of this vertical collection could have width 0 at
     // initial render step but will be updated later. We want to return visibleRight to be 0 rather
     // than -1.
     return Math.max(this.visibleLeft + this._calculatedScrollContainerWidth - 1, 0);
