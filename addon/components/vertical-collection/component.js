@@ -38,14 +38,14 @@ const VerticalCollection = Component.extend({
   // –––––––––––––– Required Settings
 
   /**
-   * Estimated width of an item to be rendered. Use best guess as this will be used to determine how many items
+   * Estimated height of an item to be rendered. Use best guess as this will be used to determine how many items
    * are displayed virtually, before and after the vertical-collection viewport.
    *
-   * @property estimateWidth
+   * @property estimateHeight
    * @type Number
    * @required
    */
-  estimateWidth: null,
+  estimateHeight: null,
 
   /**
    * List of objects to svelte-render.
@@ -59,14 +59,14 @@ const VerticalCollection = Component.extend({
 
   // –––––––––––––– Optional Settings
   /**
-   * Indicates if the occluded items' widths will change or not.
-   * If true, the vertical-collection will assume that items' widths are always equal to estimateWidth;
+   * Indicates if the occluded items' heights will change or not.
+   * If true, the vertical-collection will assume that items' heights are always equal to estimateHeight;
    * this is more performant, but less flexible.
    *
-   * @property staticWidth
+   * @property staticHeight
    * @type Boolean
    */
-  staticWidth: false,
+  staticHeight: false,
 
   /**
    * Indicates whether or not list items in the Radar should be reused on update of virtual components (e.g. scroll).
@@ -85,7 +85,7 @@ const VerticalCollection = Component.extend({
 
   /*
    * A selector string that will select the element from
-   * which to calculate the viewable width and needed offsets.
+   * which to calculate the viewable height and needed offsets.
    *
    * This element will also have the `scroll` event handler added to it.
    *
@@ -150,7 +150,7 @@ const VerticalCollection = Component.extend({
   isEmpty: computed.empty('items'),
   shouldYieldToInverse: computed.readOnly('isEmpty'),
 
-  virtualComponents: computed('items.[]', 'renderAll', 'estimateWidth', 'bufferSize', function() {
+  virtualComponents: computed('items.[]', 'renderAll', 'estimateHeight', 'bufferSize', function() {
     const {
       _radar,
       _prevItemsLength,
@@ -158,7 +158,7 @@ const VerticalCollection = Component.extend({
       _prevLastKey
     } = this;
 
-    _radar.estimateWidth = this.get('estimateWidth');
+    _radar.estimateHeight = this.get('estimateHeight');
     _radar.renderAll = this.get('renderAll');
     _radar.bufferSize = this.get('bufferSize');
 
@@ -241,13 +241,13 @@ const VerticalCollection = Component.extend({
     this._super();
 
     this.token = new Token();
-    const RadarClass = this.staticWidth ? StaticRadar : DynamicRadar;
+    const RadarClass = this.staticHeight ? StaticRadar : DynamicRadar;
 
     const items = this.get('items') || [];
 
     const bufferSize = this.get('bufferSize');
     const containerSelector = this.get('containerSelector');
-    const estimateWidth = this.get('estimateWidth');
+    const estimateHeight = this.get('estimateHeight');
     const initialRenderCount = this.get('initialRenderCount');
     const renderAll = this.get('renderAll');
     const renderFromLast = this.get('renderFromLast');
@@ -263,7 +263,7 @@ const VerticalCollection = Component.extend({
       {
         bufferSize,
         containerSelector,
-        estimateWidth,
+        estimateHeight,
         initialRenderCount,
         items,
         renderAll,

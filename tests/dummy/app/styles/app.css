@@ -102,12 +102,11 @@ number-slide {
   align-items: center;
   -webkit-justify-content: center;
   justify-content: center;
-  flex: 0 0 auto;
   font-size: 2rem;
   width: 250px;
   height: 4em;
   line-height: 4em;
-  margin: 10px;
+  margin: 10px auto;
   background: #1f2f30;
   border: 1px solid #bbb;
   box-shadow: 1px 1px 5px 0 #d0d0d0;
@@ -228,4 +227,28 @@ vertical-item {
   display: flex;
   align-items: center;
   flex: 0 0 auto;
+}
+
+.scrollable-horizontal occluded-content {
+  min-height: auto;
+  min-width: 0.01px;
+  flex: 0 0 auto;
+}
+
+.scrollable-horizontal number-slide {
+  flex: 0 0 auto;
+  margin: 0 10px;
+}
+
+.scrollable-horizontal table > occluded-content,
+.scrollable-horizontal tbody > occluded-content,
+.scrollable-horizontal thead > occluded-content {
+  height: 100%;
+  width: auto;
+}
+
+.scrollable-horizontal ul > occluded-content,
+.scrollable-horizontal ol > occluded-content {
+  height: 100%;
+  width: 0;
 }
