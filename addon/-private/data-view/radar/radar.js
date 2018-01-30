@@ -1,4 +1,5 @@
-import Ember from 'ember';
+import { A } from '@ember/array';
+import { set, get } from '@ember/object';
 import { assert } from '@ember/debug';
 import { DEBUG } from '@glimmer/env';
 
@@ -8,24 +9,20 @@ import VirtualComponent from '../virtual-component';
 import insertRangeBefore from '../utils/insert-range-before';
 import objectAt from '../utils/object-at';
 import roundTo from '../utils/round-to';
+import { isPrepend, isAppend } from '../utils/mutation-checkers';
 
 import {
   addScrollHandler,
   removeScrollHandler
 } from '../utils/scroll-handler';
 
-import Container from '../container';
+import ViewportContainer from '../viewport-container';
 
 import closestElement from '../../utils/element/closest';
 import estimateElementHeight from '../../utils/element/estimate-element-height';
 import estimateElementWidth from '../../utils/element/estimate-element-width';
 import getScaledClientRect from '../../utils/element/get-scaled-client-rect';
-
-const {
-  A,
-  get,
-  set
-} = Ember;
+import keyForItem from '../../ember-internals/key-for-item';
 
 export default class Radar {
   constructor(
@@ -35,10 +32,11 @@ export default class Radar {
       containerSelector,
       estimateHeight,
       estimateWidth,
+      initialRenderCount,
       items,
+      key,
       renderAll,
       renderFromLast,
-      initialRenderCount,
       shouldRecycle,
       startingIndex
     }
@@ -52,6 +50,7 @@ export default class Radar {
     this.estimateWidth = estimateWidth;
     this.initialRenderCount = initialRenderCount;
     this.items = items;
+    this.key = key;
     this.renderAll = renderAll;
     this.renderFromLast = renderFromLast;
     this.shouldRecycle = shouldRecycle;
@@ -89,6 +88,7 @@ export default class Radar {
     this._nextLayout = null;
     this._started = false;
     this._didReset = true;
+    this._didUpdateItems = false;
 
     // Cache state
     this._scrollTop = 0;
@@ -99,8 +99,13 @@ export default class Radar {
     this._prevLastItemIndex = -Infinity;
     this._prevFirstVisibleIndex = 0;
     this._prevLastVisibleIndex = 0;
+
     this._firstReached = false;
     this._lastReached = false;
+    this._prevTotalItems = 0;
+    this._prevFirstKey = 0;
+    this._prevLastKey = 0;
+
     this._componentPool = [];
     this._prependComponentPool = [];
 
@@ -146,7 +151,7 @@ export default class Radar {
 
     if (this._started) {
       removeScrollHandler(this._scrollContainer, this._scrollHandler);
-      Container.removeEventListener('resize', this._resizeHandler);
+      ViewportContainer.removeEventListener('resize', this._resizeHandler);
     }
   }
 
@@ -168,7 +173,7 @@ export default class Radar {
     // Use the occluded content element, which has been inserted into the DOM,
     // to find the item container and the scroll container
     this._itemContainer = _occludedContentBefore.element.parentNode;
-    this._scrollContainer = containerSelector === 'body' ? Container : closestElement(this._itemContainer, containerSelector);
+    this._scrollContainer = containerSelector === 'body' ? ViewportContainer : closestElement(this._itemContainer, containerSelector);
 
     this._updateConstants();
 
@@ -196,6 +201,8 @@ export default class Radar {
       // scrollContainer after the collection has been initialized
       this._scrollTop = startingScrollTop + _collectionOffsetTop;
       this._scrollLeft = startingScrollLeft + _collectionOffsetLeft;
+
+      this._prevFirstVisibleIndex = startingIndex;
     }
 
     this._started = true;
@@ -203,7 +210,7 @@ export default class Radar {
 
     // Setup event handlers
     addScrollHandler(this._scrollContainer, this._scrollHandler);
-    Container.addEventListener('resize', this._resizeHandler);
+    ViewportContainer.addEventListener('resize', this._resizeHandler);
   }
 
   /*
@@ -218,7 +225,13 @@ export default class Radar {
    *
    * @private
    */
-  scheduleUpdate() {
+  scheduleUpdate(didUpdateItems) {
+    if (didUpdateItems === true) {
+      // Set the update items flag first, in case scheduleUpdate has already been called
+      // but the RAF hasn't yet run
+      this._didUpdateItems = true;
+    }
+
     if (this._nextUpdate !== null || this._started === false) {
       return;
     }
@@ -233,6 +246,11 @@ export default class Radar {
   }
 
   update() {
+    if (this._didUpdateItems === true) {
+      this._determineUpdateType();
+      this._didUpdateItems = false;
+    }
+
     this._updateConstants();
     this._updateIndexes();
     this._updateVirtualComponents();
@@ -241,7 +259,7 @@ export default class Radar {
   }
 
   afterUpdate() {
-    const { totalItems } = this;
+    const { _prevTotalItems: totalItems } = this;
 
     const verticalScrollDiff = this._calculateVerticalScrollDiff();
     const horizontalScrollDiff = this._calculateHorizontalScrollDiff();
@@ -264,7 +282,6 @@ export default class Radar {
     this._prependOffsetTop = 0;
     this._prependOffsetLeft = 0;
 
-    // Send actions if there are any items
     if (totalItems !== 0) {
       this._sendActions();
     }
@@ -302,6 +319,35 @@ export default class Radar {
 
   _calculateHorizontalScrollDiff() {
     return (this._prependOffsetLeft + this._scrollLeft) - this._scrollContainer.scrollLeft;
+  }
+
+  _determineUpdateType() {
+    const {
+      items,
+      key,
+      totalItems,
+
+      _prevTotalItems,
+      _prevFirstKey,
+      _prevLastKey
+    } = this;
+
+    const lenDiff = totalItems - _prevTotalItems;
+
+    if (isPrepend(lenDiff, items, key, _prevFirstKey, _prevLastKey) === true) {
+      this.prepend(lenDiff);
+    } else if (isAppend(lenDiff, items, key, _prevFirstKey, _prevLastKey) === true) {
+      this.append(lenDiff);
+    } else {
+      this.reset();
+    }
+
+    const firstItem = objectAt(this.items, 0);
+    const lastItem = objectAt(this.items, this.totalItems - 1);
+
+    this._prevTotalItems = totalItems;
+    this._prevFirstKey = totalItems > 0 ? keyForItem(firstItem, key, 0) : 0;
+    this._prevLastKey = totalItems > 0 ? keyForItem(lastItem, key, totalItems - 1) : 0;
   }
 
   _updateConstants() {
@@ -430,9 +476,8 @@ export default class Radar {
 
       shouldRecycle,
       renderAll,
-
-      _didReset,
       _started,
+      _didReset,
 
       _occludedContentBefore,
       _occludedContentAfter,
