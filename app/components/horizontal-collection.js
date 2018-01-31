@@ -1,1 +1,1 @@
-export { default } from 'vertical-collection/components/horizontal-collection/component';
+export { default } from '@html-next/vertical-collection/components/horizontal-collection/component';
